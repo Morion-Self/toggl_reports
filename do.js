@@ -1,24 +1,34 @@
 const auth = require('./auth.json');
 var fetch = require('node-fetch');
 
-let aDates = [
-    '2021-06-28',
-    '2021-06-29',
-    '2021-06-30',
-    '2021-07-01',
-    '2021-07-02'
-];
+
+let aDates;
+
+// По умолчанию утилита выдает отчет за прошлую неделю, потому что отчет MCS я собираю по утрам понедельника
+// Но если нужны конкретные даты — нужно раскомментить этот кусок и подставить нужные даты
+// aDates = [
+//     new Date('2021-06-28'),
+//     new Date('2021-06-29'),
+//     new Date('2021-06-30'),
+//     new Date('2021-07-01'),
+//     new Date('2021-07-02'),
+//     new Date('2021-07-03'),
+//     new Date('2021-07-04')
+// ];
+
+if (!aDates) {
+    aDates = getPrevWeek();
+}
+
 
 aDates.forEach(async (dateItem) => {
-    let oDate = new Date(dateItem);
-
     getData(dateItem).then(
         result => {
             result.forEach((itemProject) => {
                 itemProject.items.forEach(function (itemDesc) {
                     let preparedString = prepareString(itemDesc.title.time_entry, itemProject.title.project);
                     console.log(
-                        oDate.toLocaleDateString() + ';' +
+                        dateItem.toLocaleDateString() + ';' +
                         preparedString.task + ';' +
                         convertMS(itemDesc.time) + ';' +
                         preparedString.jobType
@@ -32,10 +42,35 @@ aDates.forEach(async (dateItem) => {
 
 
 
+// читай про async вот тут https://learn.javascript.ru/async-await
+// мне кажется это крутая удобная штука, сразу делать промисы
+async function getData(oDate) {
+
+    return fetch(
+        'https://api.track.toggl.com/reports/api/v2/summary' +
+        '?workspace_id=' + auth.toggl.workspace_id +
+        '&client_ids=' + auth.toggl.client_ids +
+        '&since=' + formatDateForAPI(oDate) +
+        '&until=' + formatDateForAPI(oDate) +
+        '&user_agent=my_report_app',
+        {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Basic ${new Buffer.from(`${auth.toggl.token}:api_token`, 'utf8').toString('base64')}`
+            }
+        }
+    )
+        .then(res => res.json()) // достаем json (см https://learn.javascript.ru/fetch)
+        .then(json => json.data) // из json выбираем только объект data
+}
+
+
+
 /**
  * Конвертит милисекунды в часы и минуты
  */
-function convertMS(milliseconds) {
+ function convertMS(milliseconds) {
     let hour, minute, seconds;
     seconds = Math.floor(milliseconds / 1000);
     minute = Math.floor(seconds / 60);
@@ -49,29 +84,6 @@ function convertMS(milliseconds) {
     hour = '0' + hour;
     hour = hour.substring(hour.length - 2);
     return hour + ':' + minute;
-}
-
-// читай про async вот тут https://learn.javascript.ru/async-await
-// мне кажется это крутая удобная штука, сразу делать промисы
-async function getData(sDate) {
-
-    return fetch(
-        'https://api.track.toggl.com/reports/api/v2/summary' +
-        '?workspace_id=' + auth.toggl.workspace_id +
-        '&client_ids=' + auth.toggl.client_ids +
-        '&since=' + sDate +
-        '&until=' + sDate +
-        '&user_agent=my_report_app',
-        {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Basic ${new Buffer.from(`${auth.toggl.token}:api_token`, 'utf8').toString('base64')}`
-            }
-        }
-    )
-        .then(res => res.json()) // достаем json (см https://learn.javascript.ru/fetch)
-        .then(json => json.data) // из json выбираем только объект data
 }
 
 /**
@@ -122,14 +134,33 @@ function prepareString(time_entry, project) {
     if (time_entry.toLowerCase() === 'пишу' && project.toLowerCase().indexOf('статья') === 0) {
         out.jobType = 'Статья';
     }
-    
-    // if (time_entry === 'Созвон редакции ЗО') {
-    //     out.jobType = 'Созвон редакции';
-    //     out.task = time_entry;
-    // }
-
-
-
 
     return out;
+}
+
+
+/**
+ * Возвращает даты за прошлую неделю
+ */
+function getPrevWeek() {
+
+    let firstDate = new Date();
+    firstDate.setDate(new Date().getDate() - (6 + new Date().getDay()));
+
+    let out = [];
+    for (let i = 0; i < 7; i++) {
+        let newDate = new Date(firstDate.getTime()); // чтобы сделать копию, а не ссылаться на него
+        newDate.setDate(firstDate.getDate() + i);
+        out.push(newDate);
+    }
+    return out;
+}
+
+/**
+ * Возвращает дату в формате yyyy-mm-dd, необходимую для API
+ */
+function formatDateForAPI(oDate) {
+    return oDate.getFullYear() + '-' +
+        (oDate.getMonth() + 1) + '-' +
+        oDate.getDate();
 }
