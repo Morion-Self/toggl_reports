@@ -4,8 +4,9 @@ var fetch = require('node-fetch');
 
 let aDates;
 
-// По умолчанию утилита выдает отчет за прошлую неделю, потому что отчет MCS я собираю по утрам понедельника
+// По умолчанию утилита выдает отчет за последние 7 дней
 // Но если нужны конкретные даты — нужно раскомментить этот кусок и подставить нужные даты
+// 
 // aDates = [
 //     new Date('2021-06-28'),
 //     new Date('2021-06-29'),
@@ -17,7 +18,7 @@ let aDates;
 // ];
 
 if (!aDates) {
-    aDates = getPrevWeek();
+    aDates = getLast7Days();
 }
 
 
@@ -70,7 +71,7 @@ async function getData(oDate) {
 /**
  * Конвертит милисекунды в часы и минуты
  */
- function convertMS(milliseconds) {
+function convertMS(milliseconds) {
     let hour, minute, seconds;
     seconds = Math.floor(milliseconds / 1000);
     minute = Math.floor(seconds / 60);
@@ -140,18 +141,14 @@ function prepareString(time_entry, project) {
 
 
 /**
- * Возвращает даты за прошлую неделю
+ * Возвращает последние 7 дней, включая сегодня
  */
-function getPrevWeek() {
-
-    let firstDate = new Date();
-    firstDate.setDate(new Date().getDate() - (6 + new Date().getDay()));
-
+function getLast7Days() {
     let out = [];
     for (let i = 0; i < 7; i++) {
-        let newDate = new Date(firstDate.getTime()); // чтобы сделать копию, а не ссылаться на него
-        newDate.setDate(firstDate.getDate() + i);
-        out.push(newDate);
+        var d = new Date();
+        d.setDate(d.getDate() - i);
+        out.push(d);
     }
     return out;
 }
@@ -164,3 +161,25 @@ function formatDateForAPI(oDate) {
         (oDate.getMonth() + 1) + '-' +
         oDate.getDate();
 }
+
+/**
+ * Возвращает даты за прошлую неделю.
+ *
+ * Сначала я сделал так, чтобы по-умолчанию отчет собирался за прошлую неделю.
+ * Именно за прошлую неделю, а не за 7 дней. Но сейчас я от этого отказался, и собираю отчет за последние 7 дней.
+ *
+ * Этот код оставлю, вдруг еще пригодится.
+ */
+// function getPrevWeek() {
+
+//     let firstDate = new Date();
+//     firstDate.setDate(new Date().getDate() - (6 + new Date().getDay()));
+
+//     let out = [];
+//     for (let i = 0; i < 7; i++) {
+//         let newDate = new Date(firstDate.getTime()); // чтобы сделать копию, а не ссылаться на него
+//         newDate.setDate(firstDate.getDate() + i);
+//         out.push(newDate);
+//     }
+//     return out;
+// }
