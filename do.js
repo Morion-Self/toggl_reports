@@ -54,6 +54,7 @@ async function getData(oDate) {
         '&since=' + formatDateForAPI(oDate) +
         '&until=' + formatDateForAPI(oDate) +
         '&user_agent=my_report_app',
+        // себе на будущее: в этом АПИ нельзя вытаскивать теги(( А я бы хотел, чтобы автоматом проставлять тип работы в МЦС
         {
             method: 'GET',
             headers: {
@@ -135,6 +136,9 @@ function prepareString(time_entry, project) {
     if (time_entry.toLowerCase() === 'пишу' && project.toLowerCase().indexOf('статья') === 0) {
         out.jobType = 'Статья';
     }
+
+    // Временно делаю так, потому что надо лучше продумывать тип работы. Пока буду писать его руками
+    out.jobType = '';
 
     return out;
 }
