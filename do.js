@@ -1,7 +1,6 @@
 const auth = require('./auth.json');
 var fetch = require('node-fetch');
 
-
 let aDates;
 
 // По умолчанию утилита выдает отчет за последние 7 дней
@@ -41,12 +40,8 @@ aDates.forEach(async (dateItem) => {
     );
 });
 
-
-
-// читай про async вот тут https://learn.javascript.ru/async-await
-// мне кажется это крутая удобная штука, сразу делать промисы
+// https://learn.javascript.ru/async-await
 async function getData(oDate) {
-
     return fetch(
         'https://api.track.toggl.com/reports/api/v2/summary' +
         '?workspace_id=' + auth.toggl.workspace_id +
@@ -63,10 +58,9 @@ async function getData(oDate) {
             }
         }
     )
-        .then(res => res.json()) // достаем json (см https://learn.javascript.ru/fetch)
+        .then(res => res.json()) // достаем json
         .then(json => json.data) // из json выбираем только объект data
 }
-
 
 
 /**
@@ -108,7 +102,6 @@ function prepareString(time_entry, project) {
         jobType: '',
         task: (time_entry + ' ' + project)
     };
-
 
     // если это созвон или ревью, пишем это в тип работы
     if (
@@ -168,7 +161,7 @@ function formatDateForAPI(oDate) {
 
 
 function echoReadme() {
-    console.log ('\r\n\
+    console.log('\r\n\
 *********************************************************************************************************************************\r\n\
     ЧТО ДЕЛАТЬ С ЭТИМИ ДАННЫМИ:\r\n\
     \r\n\
@@ -180,8 +173,6 @@ function echoReadme() {
     5. Данные => Сортировать ДИАПАЗОН а не Лист\r\n\
     6. Заполнить столбец Тип работы, если необходимо\r\n\
     7. Обязательно сверить отчет с toggl\r\n\
-        Скорее всего, в моем отчете будет на 10-15 меньше, чем в toggle.\r\n\
-        Походу из-за округления. Можно их просто накинуть на какую-нибудь задачу\r\n\
 *********************************************************************************************************************************\r\n\
         ');
 }
